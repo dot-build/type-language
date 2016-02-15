@@ -1,0 +1,22 @@
+{
+    "name": "type-language",
+    "version": "0.0.0",
+    "description": "Telegram TL written in ES6",
+    "license": "MIT",
+    "main": "dist/type-language.js",
+    "author": {
+    "name": "Darlan Alves",
+    "email": "me@darlanalv.es"
+},
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/https://github.com/dot-build/type-language"
+},
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "vendor",
+        "test",
+        "coverage"
+    ]
+}

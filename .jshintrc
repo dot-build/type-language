@@ -1,0 +1,9 @@
+{
+    "globals": {
+        "TL": true
+    },
+    "strict": false,
+    "node": true,
+    "undef": true,
+    "jasmine": true
+}
