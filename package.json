@@ -1,6 +1,6 @@
 {
   "name": "type-language",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Telegram TL written in ES6",
   "license": "MIT",
   "main": "dist/type-language.js",
