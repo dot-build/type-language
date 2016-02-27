@@ -11,6 +11,7 @@ module.exports = function(config) {
 
         files: [
             require.resolve('babel-polyfill/browser.js'),
+            require.resolve('jsbn'),
             'dist/type-language.js',
             'test/**/*.spec.js'
         ],

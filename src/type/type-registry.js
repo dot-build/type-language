@@ -1,5 +1,7 @@
 import TLObject from 'type/tl-object.js';
 
+const VectorType = /^[Vv]ector<(.+)>$/;
+
 class TypeRegistry {
     constructor() {
         this._byId = {};
@@ -7,6 +9,10 @@ class TypeRegistry {
         this.types = {};
     }
 
+    /**
+     * @param {Function} Type               TLObject constructor
+     * @param {string} [namespace='']       Optional namespace (type prefix)
+     */
     addType(Type, namespace) {
         let typeMeta = Type.id;
         let ns = (namespace ? namespace + '.' : '');
@@ -20,6 +26,10 @@ class TypeRegistry {
         this.addTypeReference(Type, type);
     }
 
+    /**
+     * @param {Function} Type
+     * @param {string} [namespace='']
+     */
     addTypeReference(Type, namespace) {
         let parent = this.types;
         let typeName = namespace;
@@ -37,15 +47,21 @@ class TypeRegistry {
 
     /**
      * @param {Object} schema
+     * @property {Array<Object>} constructors
+     * @property {Array<Object>} methods
      * @param {string} [namespace='']
      */
     importSchema(schema, namespace = '') {
         const register = (type) => this.importType(type, namespace);
 
-        schema.constructors.forEach(register);
-        schema.methods.forEach(register);
+        (schema.constructors||[]).forEach(register);
+        (schema.methods||[]).forEach(register);
     }
 
+    /**
+     * @param {Object} typeDefinition
+     * @param {string} [namespace='']
+     */
     importType(typeDefinition, namespace) {
         this.addType(this.createType(typeDefinition), namespace);
     }
@@ -53,13 +69,16 @@ class TypeRegistry {
     createType(typeDefinition) {
         let type = typeDefinition.method || typeDefinition.predicate;
         let baseType = typeDefinition.type;
+        let params = typeDefinition.params;
 
         let id = typeDefinition.id;
         let typeHash = new Buffer(4);
         typeHash.writeInt32LE(id, 0);
         id = typeHash.toString('hex');
 
-        let typeMetadata = { id, type, baseType };
+        this._normalizeParams(params);
+
+        let typeMetadata = { id, type, baseType, params };
 
         class Type extends TLObject {}
 
@@ -75,6 +94,19 @@ class TypeRegistry {
 
     getById(id) {
         return this._byId[id];
+    }
+
+    _normalizeParams(params) {
+        params.forEach(param => {
+            let type = param.type;
+            if (!VectorType.test(type)) return;
+
+            let match = type.match(VectorType);
+            type = match[1];
+
+            param.type = type;
+            param.isVector = true;
+        });
     }
 }
 

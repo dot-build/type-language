@@ -1,25 +1,23 @@
 import TLObject from 'type/tl-object.js';
 
-const defaultOptions = { type: 'int' };
+// const defaultOptions = { type: 'int' };
 
 export default class Vector extends TLObject {
-    constructor(data = {}) {
-        super(data);
+    constructor(list = [], type = 'int') {
+        super();
 
-        let mergedOptions = {};
+        this.list = list;
+        this.type = type;
+    }
 
-        Object.assign(mergedOptions, defaultOptions);
-        Object.assign(mergedOptions, data);
-
-        this._options = mergedOptions;
-
-        if (Array.isArray(mergedOptions.list)) {
-            this._list = mergedOptions.list;
-        }
+    getList() {
+        return this.list.slice();
     }
 }
 
-Vector.prototype._id = Vector.id = {
+Vector.prototype.__id = Vector.id = {
     id: '15c4b51c',
-    type: 'Vector'
+    type: 'vector',
+    baseType: 'Vector',
+    params: []
 };

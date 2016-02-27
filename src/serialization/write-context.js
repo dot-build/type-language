@@ -1,26 +1,39 @@
 import { Buffer } from 'buffer';
 import { BigInteger } from 'jsbn';
+import { SHORT_BUFFER_LENGTH, isPrimitive } from 'serialization/common.js';
+import Vector from 'vector';
 
-const SHORT_BUFFER_LENGTH = 254;
-const isPrimitive = new RegExp('^(int|int128|int256|long|double|string|bytes)', 'i');
+const VECTOR_ID = Vector.id.id;
 
 export default class WriteContext {
     /**
      * @param {TL.TLObject} object
      */
-    constructor(object) {
+    constructor(object, options = {}) {
         this._object = object;
         this._buffers = [];
+        this._options = options;
     }
 
     /**
      * Serializes the TL Object given upon construction
      */
     serialize() {
-        let params = this.object.__id.params;
+        let params = this._object.__id.params;
+
+        if (!this._options.isBare) {
+            let id = this._object.__id.id;
+            id = new Buffer(id, 'hex');
+            this.push(id);
+        }
 
         params.forEach(param => {
-            let value = this.object[param.name];
+            let value = this._object[param.name];
+
+            if (param.isVector) {
+                this._writeVector(value);
+                return;
+            }
 
             if (this._isPrimitive(param.type)) {
                 this._writePrimitive(param.type, value);
@@ -31,6 +44,27 @@ export default class WriteContext {
         });
 
         return this;
+    }
+
+    _writeVector(vector) {
+        let list = vector.getList();
+
+        let id = new Buffer(VECTOR_ID, 'hex');
+        let length = new Buffer(4);
+        length.writeUInt32LE(list.length);
+
+        this.push(id);
+        this.push(length);
+
+        let type = vector.type;
+        let isPrimitive = this._isPrimitive(type);
+
+        if (isPrimitive) {
+            list.forEach(item => this._writePrimitive(type, item));
+            return;
+        }
+
+        list.forEach(item => this._writeTypeObject(item, { isBare: true }));
     }
 
     /**
@@ -56,9 +90,13 @@ export default class WriteContext {
      * Write a TL Object
      * @param {TL.TLObject} object
      */
-    _writeTypeObject(object) {
+    _writeTypeObject(object, options = {}) {
+        if (!options.isBare) {
+            this.push(new Buffer(object.__id.id, 'hex'));
+        }
+
         let context = new WriteContext(object);
-        let buffer = context.serialize();
+        let buffer = context.serialize().toBuffer();
 
         this._writeBytes(buffer);
     }
@@ -126,6 +164,10 @@ export default class WriteContext {
      */
     writeInt256(number) {
         return this._writeBigInt(number, 32);
+    }
+
+    writeString(string) {
+        return this.writeBytes(string);
     }
 
     /**

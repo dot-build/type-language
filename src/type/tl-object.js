@@ -12,3 +12,10 @@ export default class TLObject {
         }
     }
 }
+
+TLObject.id = TLObject.prototype.__id = {
+    id: '',
+    type: '',
+    baseType: 'Object',
+    params: []
+};
