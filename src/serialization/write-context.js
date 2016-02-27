@@ -2,27 +2,92 @@ import { Buffer } from 'buffer';
 import { BigInteger } from 'jsbn';
 
 const SHORT_BUFFER_LENGTH = 254;
+const isPrimitive = new RegExp('^(int|int128|int256|long|double|string|bytes)', 'i');
 
-/**
- * Prepare basic object types for serialization (integers, strings, buffers...)
- */
-export default class TypeObjectWriter {
-    static getInstance() {
-        if (!TypeObjectWriter._instance) {
-            TypeObjectWriter._instance = new TypeObjectWriter();
-        }
+export default class WriteContext {
+    /**
+     * @param {TL.TLObject} object
+     */
+    constructor(object) {
+        this._object = object;
+        this._buffers = [];
+    }
 
-        return TypeObjectWriter._instance;
+    /**
+     * Serializes the TL Object given upon construction
+     */
+    serialize() {
+        let params = this.object.__id.params;
+
+        params.forEach(param => {
+            let value = this.object[param.name];
+
+            if (this._isPrimitive(param.type)) {
+                this._writePrimitive(param.type, value);
+                return;
+            }
+
+            this._writeTypeObject(value);
+        });
+
+        return this;
+    }
+
+    /**
+     * Check whether a given object param is primitive or a TL object
+     * @private
+     * @return {boolean}
+     */
+    _isPrimitive(type) {
+        return isPrimitive.test(type);
+    }
+
+    /**
+     * Write a primitive value
+     * @param {string} type
+     * @param {*} value
+     */
+    _writePrimitive(type, value) {
+        let method = 'write' + type.charAt(0).toUpperCase() + type.slice(1);
+        return this[method](value);
+    }
+
+    /**
+     * Write a TL Object
+     * @param {TL.TLObject} object
+     */
+    _writeTypeObject(object) {
+        let context = new WriteContext(object);
+        let buffer = context.serialize();
+
+        this._writeBytes(buffer);
+    }
+
+    /**
+     * @param {Buffer} buffer
+     */
+    push(buffer) {
+        this._buffers.push(buffer);
+
+        return this;
+    }
+
+    /**
+     * Concatenate and return all buffers generated on serialization
+     * @return {Buffer}
+     */
+    toBuffer() {
+        return Buffer.concat(this._buffers);
     }
 
     /**
      * @param {SerializationContext} context    Serialization context
      * @param {number} number                   A valid integer
      */
-    writeInt(context, number) {
+    writeInt(number) {
         var buffer = new Buffer(4);
         buffer.writeUInt32LE(number, 0, true);
-        context.write(buffer);
+        this.push(buffer);
 
         return this;
     }
@@ -31,10 +96,10 @@ export default class TypeObjectWriter {
      * @param {SerializationContext} context    Serialization context
      * @param {number} number                   A valid double
      */
-    writeDouble(context, number) {
+    writeDouble(number) {
         var buffer = new Buffer(8);
         buffer.writeDoubleLE(number, 0, true);
-        context.write(buffer);
+        this.push(buffer);
 
         return this;
     }
@@ -43,31 +108,31 @@ export default class TypeObjectWriter {
      * @param {SerializationContext} context        Serialization context
      * @param {BigInteger|String|Number} number     A long representation
      */
-    writeLong(context, number) {
-        return this._writeBigInt(context, number, 8);
+    writeLong(number) {
+        return this._writeBigInt(number, 8);
     }
 
     /**
      * @param {SerializationContext} context        Serialization context
      * @param {BigInteger|String|Number} number     A int128 representation
      */
-    writeInt128(context, number) {
-        return this._writeBigInt(context, number, 16);
+    writeInt128(number) {
+        return this._writeBigInt(number, 16);
     }
 
     /**
      * @param {SerializationContext} context        Serialization context
      * @param {BigInteger|String|Number} number     A int256 representation
      */
-    writeInt256(context, number) {
-        return this._writeBigInt(context, number, 32);
+    writeInt256(number) {
+        return this._writeBigInt(number, 32);
     }
 
     /**
      * @param {SerializationContext} context        Serialization context
-     * @param {Buffer|String} bytes                 Either a string or a Buffer object
+     * @param {Buffer|string} bytes                 Either a string or a Buffer object
      */
-    writeBytes(context, bytes) {
+    writeBytes(bytes = '') {
         let length = bytes.length;
         let isShortBuffer = length < SHORT_BUFFER_LENGTH;
         let lengthBuffer, byteCount = 0;
@@ -88,16 +153,16 @@ export default class TypeObjectWriter {
         }
 
         // buffer that defines the length of "bytes" buffer
-        context.write(lengthBuffer);
+        this.push(lengthBuffer);
 
-        this._writeBytes(context, bytes);
+        this._writeBytes(bytes);
         byteCount += length;
 
         let padding = byteCount % 4;
         if (padding) {
             padding = new Buffer(4 - padding);
             padding.fill(0);
-            context.write(padding);
+            this.push(padding);
         }
 
         return this;
@@ -108,20 +173,20 @@ export default class TypeObjectWriter {
      * @param {string|number|Buffer|BigInteger} number      Number to write
      * @param {number} length                               Byte-length of number
      */
-    _writeBigInt(context, number, length) {
+    _writeBigInt(number, length) {
         if (typeof number === 'number') {
             let buffer = this._getBufferFromNumber(number, length);
-            context.write(buffer);
+            this.push(buffer);
         } else
 
         if (typeof number === 'string') {
             let buffer = this._getBufferFromNumberString(number, length);
-            context.write(buffer);
-        } else
+            this.push(buffer);
+        }
 
         // a BigInteger or Buffer
-        {
-            this._writeBytes(context, number);
+        else {
+            this._writeBytes(number);
         }
 
         return this;
@@ -131,9 +196,9 @@ export default class TypeObjectWriter {
      * @param {SerializationContext} context        Serialization context
      * @param {Buffer|String} bytes                 Either a string or a Buffer object
      */
-    _writeBytes(context, bytes) {
+    _writeBytes(bytes) {
         var buffer = !Buffer.isBuffer(bytes) ? new Buffer(bytes) : bytes;
-        context.write(buffer);
+        this.push(buffer);
 
         return this;
     }
@@ -144,6 +209,7 @@ export default class TypeObjectWriter {
      */
     _getBufferFromNumber(number, length) {
         let buffer = new Buffer(length);
+
         buffer.fill(0);
         buffer.writeUInt32LE(number, 0);
 
