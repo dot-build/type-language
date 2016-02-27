@@ -12,12 +12,12 @@ module.exports = function(config) {
         files: [
             require.resolve('babel-polyfill/browser.js'),
             'dist/type-language.js',
-            'test/*.spec.js'
+            'test/**/*.spec.js'
         ],
 
         preprocessors: {
             'dist/type-language.js': ['coverage'],
-            'test/*.js': ['babel']
+            'test/**/*.js': ['babel']
         },
 
         coverageReporter: {

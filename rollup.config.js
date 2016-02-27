@@ -10,9 +10,9 @@ var includePaths = require('rollup-plugin-includepaths');
 
 var includePathOptions = {
     include: {},
-    paths: ['src'],
+    paths: ['src', ''],
     external: [],
-    extensions: ['.js', '.json']
+    extensions: ['.js']
 };
 
 var namedExports = {};
