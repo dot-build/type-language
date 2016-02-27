@@ -21,6 +21,7 @@
     "karma": "^0.13.21",
     "karma-babel-preprocessor": "^6.0.1",
     "karma-coverage": "^0.5.3",
+    "karma-fixture-loader": "^1.0.0",
     "karma-jasmine": "^0.3.7",
     "karma-phantomjs-launcher": "^1.0.0",
     "karma-sourcemap-loader": "^0.3.7",

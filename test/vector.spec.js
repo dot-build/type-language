@@ -1,7 +1,9 @@
 describe('Vector', function() {
     const id = {
         id: '15c4b51c',
-        type: 'Vector'
+        type: 'vector',
+        baseType: 'Vector',
+        params: []
     };
 
     describe('::id', function() {
@@ -10,22 +12,20 @@ describe('Vector', function() {
         });
     });
 
-    describe('#constructor(Buffer data)', function() {
+    describe('#constructor()', function() {
         it('should extend TypeObject', function () {
             let vector = new TL.Vector();
             expect(vector instanceof TL.TLObject).toBe(true);
         });
     });
 
-    describe('#constructor(Object options)', function() {
+    describe('#constructor(Array list, String type = "int")', function() {
         it('should store the initialization array', function () {
             let list = [1, 2, 3];
-            let options = { list };
+            let vector = new TL.Vector(list);
 
-            let vector = new TL.Vector(options);
-
-            expect(vector._list).toBe(list);
-            expect(vector._options.type).toBe('int');
+            expect(vector.list).toBe(list);
+            expect(vector.type).toBe('int');
         });
     });
 });

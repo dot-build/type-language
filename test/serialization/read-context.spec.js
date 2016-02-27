@@ -1,3 +1,4 @@
+/* globals BigInteger */
 describe('ReadContext', function() {
     const ReadContext = TL.ReadContext;
 
@@ -13,7 +14,7 @@ describe('ReadContext', function() {
     });
 
     describe('#deserialize()', function() {
-        fit('should extract data on buffer into _object', function() {
+        it('should extract data on buffer into _object', function() {
             const schema = getSchema();
             TL.TypeRegistry.importSchema(schema);
 
@@ -44,10 +45,10 @@ describe('ReadContext', function() {
                 long: 3,
                 int128: new BigInteger('0x9f09a56a2a594c5e036bc3db4578a52f', 16).toString(16),
                 int256: new BigInteger('0x5d1ffa9187804b67bffe4f80f49901aa0d91fa07b12443a9fe645cb7311600cc', 32).toString(16),
-                vectorInt: new TL.Vector([1, 2, 3]),
                 vectorLong: new TL.Vector(['288230376151711744', '360287970189639680', '432345564227567616'], 'long'),
-                // object: new TL.types.intId({ id: -2 }),
-                // intIds: new TL.Vector([ new TL.types.intId({ id: 1 }), new TL.types.intId({ id: 2 }) ], 'intId')
+                vectorInt: new TL.Vector([1, 2, 3]),
+                object: new TL.types.intId({ id: 1 }),
+                intIds: new TL.Vector([ new TL.types.intId({ id: 1 }), new TL.types.intId({ id: 2 }) ], 'intId')
             };
 
             let i = new Type(data);
@@ -67,10 +68,15 @@ describe('ReadContext', function() {
 
             let vectorLong = result.vectorLong.getList();
             expect(result.vectorInt.getList()).toEqual([1, 2, 3]);
-            expect(vectorLong[0].toString(10)).toEqual('4')
-            expect(vectorLong[1].toString(10)).toEqual('5')
-            expect(vectorLong[2].toString(10)).toEqual('6')
+            expect(vectorLong[0].toString(10)).toEqual('4');
+            expect(vectorLong[1].toString(10)).toEqual('5');
+            expect(vectorLong[2].toString(10)).toEqual('6');
 
+            expect(result.object instanceof TL.types.intId).toBe(true);
+            expect(result.object.id).toBe(1);
+
+            // console.log(i.toJSON());
+            // console.log(buffer.toString('hex'));
             // console.log(result);
         });
     });
@@ -161,18 +167,18 @@ function getSchema() {
                 "name": "int256",
                 "type": "int256"
             }, {
+                "name": "vectorLong",
+                "type": "Vector<long>"
+            }, {
                 "name": "vectorInt",
                 "type": "Vector<int>"
             }, {
-                "name": "vectorLong",
-                "type": "Vector<long>"
-            }/*, {
                 "name": "object",
                 "type": "Object"
             }, {
                 "name": "intIds",
                 "type": "vector<intId>"
-            }*/],
+            }],
             "type": "AbstractConstructor"
         }, {
             "id": "87654321",

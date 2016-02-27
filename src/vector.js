@@ -1,7 +1,5 @@
 import TLObject from 'type/tl-object.js';
 
-// const defaultOptions = { type: 'int' };
-
 export default class Vector extends TLObject {
     constructor(list = [], type = 'int') {
         super();
@@ -12,6 +10,18 @@ export default class Vector extends TLObject {
 
     getList() {
         return this.list.slice();
+    }
+
+    toJSON() {
+        let list = this.list.map(item => {
+            if (item instanceof TLObject) {
+                return item.toJSON();
+            }
+
+            return item;
+        });
+
+        return { _: 'vector', type: this.type, list };
     }
 }
 

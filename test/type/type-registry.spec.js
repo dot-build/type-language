@@ -9,7 +9,7 @@ describe('TypeRegistry', function() {
     describe('#getByName(String typeName)', function() {
         it('should retrieve a defined type by name', function () {
             TypeRegistry.addType(TL.Vector);
-            let Vector = TypeRegistry.getByType('Vector');
+            let Vector = TypeRegistry.getByType('vector');
 
             expect(Vector).toBe(TL.Vector);
         });

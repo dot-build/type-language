@@ -106,6 +106,7 @@ class TypeRegistry {
 
             param.type = type;
             param.isVector = true;
+            param.isBare = type.charAt(0) === '%';
         });
     }
 }

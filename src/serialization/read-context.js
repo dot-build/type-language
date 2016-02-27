@@ -42,13 +42,18 @@ export default class ReadContext {
 
         params.forEach(param => {
             let value;
+            let type = param.type;
 
             if (param.isVector) {
-                value = this.deserializeVector(param.type);
-            } else if (this._isPrimitive(param.type)) {
-                value = this._readPrimitive(param.type);
-            } else {
-                value = this._readTypeObject();
+                value = this.deserializeVector(type);
+            }
+
+            else if (this._isPrimitive(type)) {
+                value = this._readPrimitive(type);
+            }
+
+            else {
+                value = this._readTypeObject(type);
             }
 
             this._object[param.name] = value;
@@ -65,7 +70,7 @@ export default class ReadContext {
         let objects = [];
         let isPrimitive = this._isPrimitive(type);
 
-        const read = () => isPrimitive ? this._readPrimitive(type) : this._readTypeObject();
+        const read = () => isPrimitive ? this._readPrimitive(type) : this._readTypeObject(type);
 
         for (let i = 0; i < length; i++) {
             objects.push(read());
@@ -85,13 +90,15 @@ export default class ReadContext {
         return this[method]();
     }
 
-    _readTypeObject() {
+    _readTypeObject(type) {
         let buffer = this.slice(this._buffer.length - this._cursor);
 
-        let context = new ReadContext(buffer, { isBare: true });
+        let context = new ReadContext(buffer, { isBare: type.charAt(0) === '%' });
         context.deserialize();
         this.moveCursor(context._cursor);
 
+        // TODO
+        // (typeName == 'BoolTrue') ? true : (typeName == 'BoolFalse') ? false : obj;
         return context.getTypeObject();
     }
 
@@ -110,10 +117,15 @@ export default class ReadContext {
         }
 
         this.moveCursor();
+        let bytes = this._readBytes(length);
+        this._checkPadding();
+
+        return bytes;
+    }
+
+    _readBytes(length) {
         let bytes = this.slice(length);
         this.moveCursor(length);
-
-        this._checkPadding();
 
         return bytes;
     }

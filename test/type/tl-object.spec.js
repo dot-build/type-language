@@ -8,4 +8,10 @@ describe('TLObject', function() {
             expect(o.b).toBe(2);
         });
     });
+
+    xdescribe('#toJSON()', function() {
+        it('should turn an instance into a JSON-compatible structure', function () {
+
+        });
+    });
 });

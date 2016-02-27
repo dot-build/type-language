@@ -29,18 +29,24 @@ export default class WriteContext {
 
         params.forEach(param => {
             let value = this._object[param.name];
+            let type = param.type;
 
             if (param.isVector) {
                 this._writeVector(value);
                 return;
             }
 
-            if (this._isPrimitive(param.type)) {
-                this._writePrimitive(param.type, value);
+            if (this._isPrimitive(type)) {
+                this._writePrimitive(type, value);
                 return;
             }
 
-            this._writeTypeObject(value);
+            // if (type === 'Object') {
+            //     this._writeBytes(value);
+            //     return;
+            // }
+
+            this._writeTypeObject(value, { isBare: param.isBare || type === 'Object' });
         });
 
         return this;
